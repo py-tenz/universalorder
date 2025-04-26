@@ -295,83 +295,47 @@
         updateCart();
         if (navigator.vibrate) navigator.vibrate(50);
     }
-
-    // Функция для отправки заказа
-    function sendOrder() {
-        if (cart.length === 0) {
-            alert("Корзина пуста!");
-            return;
-        }
-
-        const orderNumber = generateOrderNumber(); // Генерируем номер заказа
-
-        if (tg) {
-            try {
-                // Если в Telegram - отправляем данные через WebApp
-                const orderData = {
-                    items: cart,
-                    total: cart.reduce((sum, item) => sum + item.price, 0),
-                    orderNumber: orderNumber,
-                    timestamp: new Date().toISOString()
-                };
-                tg.sendData(JSON.stringify(orderData));
-                tg.close();
-            } catch (error) {
-                console.error("Ошибка при отправке данных через WebApp:", error);
-                alert("Не удалось отправить заказ. Попробуйте позже.");
-            }
-        } else {
-            // Стандартная логика для браузера
-            const fullName = prompt("Пожалуйста, введите ваши Фамилию и Имя:");
-            if (!fullName) {
-                alert("Имя и фамилия обязательны для оформления заказа.");
-                return;
-            }
-            sendOrderToTelegram(fullName, orderNumber);
-            // Показываем пользователю номер его заказа
-            alert(`Ваш заказ №${orderNumber} успешно оформлен!`);
-            cart = [];
-            updateCart();
-        }
+   // Отправка заказа в ТГ
+    async function sendOrder() {
+    if (cart.length === 0) {
+        alert("Корзина пуста!");
+        return;
     }
 
-    // Функция для отправки заказа в Telegram (для браузера)
-    async function sendOrderToTelegram(fullName, orderNumber) {
-        let message = `Новый заказ #${orderNumber} от ${fullName}:\n`;
-        let totalPrice = 0;
+    const fullName = prompt("Введите ваше имя:");
+    const phone = prompt("Введите ваш телефон:");
 
-        cart.forEach(item => {
-            message += `• ${item.name} - ${item.price} руб.\n`;
-            totalPrice += item.price;
+    if (!fullName || !phone) {
+        alert("Имя и телефон обязательны для оформления заказа.");
+        return;
+    }
+
+    try {
+        const response = await fetch('http://localhost:3000/send-order', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name: fullName,
+                phone: phone,
+                items: cart,
+            }),
         });
 
-        message += `\nИтого: ${totalPrice} руб.\nНомер заказа: ${orderNumber}`;
-
-        const BOT_TOKEN = "YOUR_BOT_TOKEN"; // Замените на ваш токен
-        const CHAT_ID = "YOUR_CHAT_ID"; // Замените на ваш chat_id
-
-        try {
-            const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    chat_id: CHAT_ID,
-                    text: message,
-                }),
-            });
-
-            const data = await response.json();
-            if (!data.ok) {
-                console.error("Ошибка при отправке заказа в Telegram:", data);
-                alert("Не удалось отправить заказ. Попробуйте позже.");
-            }
-        } catch (error) {
-            console.error('Ошибка:', error);
-            alert("Произошла ошибка при отправке заказа.");
+        if (response.ok) {
+            alert("Ваш заказ успешно оформлен!");
+            cart = [];
+            updateCart();
+        } else {
+            alert("Ошибка при отправке заказа. Попробуйте позже.");
         }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        alert("Произошла ошибка при отправке заказа.");
     }
+}
+
 
     // Обработчики событий
     document.querySelectorAll('.Menu_types').forEach(item => {
