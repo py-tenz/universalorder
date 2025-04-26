@@ -288,42 +288,47 @@
     }
     // Функция для отправки заказа
     function sendOrder() {
-        if (cart.length === 0) {
-            alert("Корзина пуста!");
-            return;
-        }
-        const orderNumber = generateOrderNumber(); // Генерируем номер заказа
-        if (tg && typeof tg.sendData === 'function') {
-            try {
-                // Если в Telegram - отправляем данные через WebApp
-                const orderData = {
-                    items: cart,
-                    total: cart.reduce((sum, item) => sum + item.price, 0),
-                    orderNumber: orderNumber,
-                    timestamp: new Date().toISOString()
-                };
-                tg.sendData(JSON.stringify(orderData));
-                tg.close();
+    if (cart.length === 0) {
+        alert("Корзина пуста!");
+        return;
+    }
+    const orderNumber = generateOrderNumber(); // Генерируем номер заказа
+    if (tg && typeof tg.sendData === 'function') {
+        try {
+            // Если в Telegram - отправляем данные через WebApp
+            const orderData = {
+                items: cart,
+                total: cart.reduce((sum, item) => sum + item.price, 0),
+                orderNumber: orderNumber,
+                timestamp: new Date().toISOString()
+            };
+            tg.sendData(JSON.stringify(orderData));
+
+            // Даем небольшую паузу, чтобы данные успели отправиться
+            setTimeout(() => {
                 cart = []; // Очищаем корзину
                 updateCart();
-            } catch (error) {
-                console.error("Ошибка при отправке данных через WebApp:", error);
-                alert("Не удалось отправить заказ. Попробуйте позже.");
-            }
-        } else {
-            // Стандартная логика для браузера
-            const fullName = prompt("Пожалуйста, введите ваши Фамилию и Имя:");
-            if (!fullName) {
-                alert("Имя и фамилия обязательны для оформления заказа.");
-                return;
-            }
-            sendOrderToTelegram(fullName, orderNumber);
-            // Показываем пользователю номер его заказа
-            alert(`Ваш заказ №${orderNumber} успешно оформлен!`);
-            cart = [];
-            updateCart();
+                tg.close();
+            }, 500); // Полсекунды задержки для надежности
+        } catch (error) {
+            console.error("Ошибка при отправке данных через WebApp:", error);
+            alert("Не удалось отправить заказ. Попробуйте позже.");
         }
+    } else {
+        // Стандартная логика для браузера
+        const fullName = prompt("Пожалуйста, введите ваши Фамилию и Имя:");
+        if (!fullName) {
+            alert("Имя и фамилия обязательны для оформления заказа.");
+            return;
+        }
+        sendOrderToTelegram(fullName, orderNumber);
+        // Показываем пользователю номер его заказа
+        alert(`Ваш заказ №${orderNumber} успешно оформлен!`);
+        cart = [];
+        updateCart();
     }
+}
+
     // Функция для отправки заказа в Telegram (для браузера)
     async function sendOrderToTelegram(fullName, orderNumber) {
         let message = `Новый заказ #${orderNumber} от ${fullName}:\n`;
