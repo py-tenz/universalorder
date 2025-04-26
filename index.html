@@ -232,11 +232,14 @@
         tg.expand(); // Раскрываем на весь экран
         tg.enableClosingConfirmation(); // Включаем подтверждение закрытия
     }
+
     let cart = [];
+
     // Функция для генерации 6-значного номера заказа
     function generateOrderNumber() {
         return Math.floor(100000 + Math.random() * 900000);
     }
+
     // Функция для добавления продукта в корзину
     function addToCart(productName, productPrice) {
         cart.push({ name: productName, price: parseInt(productPrice) });
@@ -244,17 +247,21 @@
         // Вибрация для feedback
         if (navigator.vibrate) navigator.vibrate(50);
     }
+
     // Функция для обновления корзины
     function updateCart() {
         const cartItems = document.getElementById('cart-items');
         const totalPriceElement = document.getElementById('total-price');
         const cartCount = document.getElementById('cart-count');
+
         // Обновляем счетчик товаров
         cartCount.textContent = cart.length;
         cartCount.style.display = cart.length > 0 ? 'flex' : 'none';
+
         // Очищаем текущее содержимое корзины
         cartItems.innerHTML = '';
         let totalPrice = 0;
+
         if (cart.length === 0) {
             const li = document.createElement('li');
             li.textContent = 'Корзина пуста';
@@ -266,93 +273,85 @@
             // Добавляем каждый продукт в корзину с кнопкой удаления
             cart.forEach((item, index) => {
                 const li = document.createElement('li');
-                li.innerHTML = `
+                li.innerHTML = 
                     <div class="cart-item">
                         <span class="item-name">${item.name}</span>
                         <span class="item-price">${item.price} руб.</span>
                         <button class="remove-item" data-index="${index}">×</button>
                     </div>
-                `;
+                ;
                 cartItems.appendChild(li);
                 totalPrice += item.price;
             });
         }
+
         // Обновляем итоговую цену
         totalPriceElement.textContent = totalPrice;
     }
+
     // Функция для удаления товара из корзины
     function removeItem(index) {
         cart.splice(index, 1);
         updateCart();
         if (navigator.vibrate) navigator.vibrate(50);
     }
+
     // Функция для отправки заказа
     function sendOrder() {
-    if (cart.length === 0) {
-        alert("Корзина пуста!");
-        return;
-    }
-    const orderNumber = generateOrderNumber(); // Генерируем номер заказа
-    if (tg && typeof tg.sendData === 'function') {
-        try {
-            // Если в Telegram - отправляем данные через WebApp
-            const orderData = {
-                items: cart,
-                total: cart.reduce((sum, item) => sum + item.price, 0),
-                orderNumber: orderNumber,
-                timestamp: new Date().toISOString()
-            };
-            tg.sendData(JSON.stringify(orderData));
-
-            // Даем небольшую паузу, чтобы данные успели отправиться
-            setTimeout(() => {
-                cart = []; // Очищаем корзину
-                updateCart();
-                tg.close();
-            }, 500); // Полсекунды задержки для надежности
-        } catch (error) {
-            console.error("Ошибка при отправке данных через WebApp:", error);
-            alert("Не удалось отправить заказ. Попробуйте позже.");
-        }
-    } else {
-        // Стандартная логика для браузера
-        const fullName = prompt("Пожалуйста, введите ваши Фамилию и Имя:");
-        if (!fullName) {
-            alert("Имя и фамилия обязательны для оформления заказа.");
+        if (cart.length === 0) {
+            alert("Корзина пуста!");
             return;
         }
-        sendOrderToTelegram(fullName, orderNumber);
-        // Показываем пользователю номер его заказа
-        alert(`Ваш заказ №${orderNumber} успешно оформлен!`);
-        cart = [];
-        updateCart();
+
+        const orderNumber = generateOrderNumber(); // Генерируем номер заказа
+
+        if (tg) {
+            try {
+                // Если в Telegram - отправляем данные через WebApp
+                const orderData = {
+                    items: cart,
+                    total: cart.reduce((sum, item) => sum + item.price, 0),
+                    orderNumber: orderNumber,
+                    timestamp: new Date().toISOString()
+                };
+                tg.sendData(JSON.stringify(orderData));
+                tg.close();
+            } catch (error) {
+                console.error("Ошибка при отправке данных через WebApp:", error);
+                alert("Не удалось отправить заказ. Попробуйте позже.");
+            }
+        } else {
+            // Стандартная логика для браузера
+            const fullName = prompt("Пожалуйста, введите ваши Фамилию и Имя:");
+            if (!fullName) {
+                alert("Имя и фамилия обязательны для оформления заказа.");
+                return;
+            }
+            sendOrderToTelegram(fullName, orderNumber);
+            // Показываем пользователю номер его заказа
+            alert(Ваш заказ №${orderNumber} успешно оформлен!);
+            cart = [];
+            updateCart();
+        }
     }
-}
 
     // Функция для отправки заказа в Telegram (для браузера)
     async function sendOrderToTelegram(fullName, orderNumber) {
-        let message = `Новый заказ #${orderNumber} от ${fullName}:\n`;
+        let message = Новый заказ #${orderNumber} от ${fullName}:\n;
         let totalPrice = 0;
 
         cart.forEach(item => {
-            message += `• ${item.name} - ${item.price} руб.\n`;
+            message += • ${item.name} - ${item.price} руб.\n;
             totalPrice += item.price;
         });
 
-        message += `\nИтого: ${totalPrice} руб.\nНомер заказа: ${orderNumber}`;
-
-        // Проверка длины сообщения
-        if (message.length > 4096) {
-            console.error("Сообщение слишком длинное для Telegram API.");
-            alert("Произошла ошибка: сообщение слишком длинное.");
-            return;
-        }
+        message += \nИтого: ${totalPrice} руб.\nНомер заказа: ${orderNumber};
 
         const BOT_TOKEN = "7735670314:AAEF2F3-bivoSccOjH-8JQvDsYugYJUMzWQ"; // Замените на ваш токен
-        const CHAT_ID = 1205843084; // Замените на ваш chat_id
+        const CHAT_ID = "1205843084"; // Замените на ваш chat_id
 
         try {
-            const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            const response = await fetch(https://api.telegram.org/bot${BOT_TOKEN}/sendMessage, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -362,10 +361,6 @@
                     text: message,
                 }),
             });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
 
             const data = await response.json();
             if (!data.ok) {
@@ -377,6 +372,7 @@
             alert("Произошла ошибка при отправке заказа.");
         }
     }
+
     // Обработчики событий
     document.querySelectorAll('.Menu_types').forEach(item => {
         item.addEventListener('click', (e) => {
@@ -384,6 +380,7 @@
             const productName = item.getAttribute('data-name');
             const productPrice = item.getAttribute('data-price');
             addToCart(productName, productPrice);
+
             // Анимация нажатия
             item.style.transform = 'scale(0.95)';
             setTimeout(() => {
@@ -391,16 +388,19 @@
             }, 100);
         });
     });
+
     document.getElementById('send-order').addEventListener('click', (e) => {
         e.preventDefault();
         sendOrder();
     });
+
     // Открытие корзины при клике на значок
     document.getElementById('cart-icon').addEventListener('click', (e) => {
         e.preventDefault();
         const cartDiv = document.getElementById('cart');
         cartDiv.classList.toggle('open');
     });
+
     // Удаление товаров из корзины (делегирование событий)
     document.addEventListener('click', (e) => {
         if (e.target.classList.contains('remove-item')) {
@@ -412,3 +412,5 @@
 </script>
 </body>
 </html>
+
+
